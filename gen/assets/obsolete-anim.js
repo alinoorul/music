@@ -27,7 +27,8 @@ const VOICE = [0.28, 0.4, 0.13, 0.04, 0.15, 0.1, 0.05, 0.0, 0.17, 0.23, 0.11, 0.
 let W = 1920, H = 1080;                                // the canvas size: fit() sets it
 const SEED = 7;
 const SHOW_TITLE = true;
-const TITLE_Y = 0.25;                                  // the middle of the title's letters, as a part of the height from the top
+const TITLE_Y = 0.25, TITLE_MAX = 0.6;                 // the middle of the title's letters, as a part of the height from the top;
+                                                       // the title is at most TITLE_MAX of the screen width
 const VW = 1920, VH = 1080, FLOOR = 790;              // the scene is drawn in this space; the glass floor is at y = FLOOR
 const WHITE = [255, 255, 255], GREEN = [0, 255, 65], DIM = [70, 150, 90];
 const MONO = "'Josefin Sans', sans-serif", SANS = MONO;   // all text is Josefin Sans
@@ -392,7 +393,12 @@ function drawTitle() {                                 // OBSOLETE: centred acro
   const m = ctx.measureText('OBSOLETE'), lift = ((m.actualBoundingBoxAscent || 98) - (m.actualBoundingBoxDescent || 0)) / 2;
   const shift = 'letterSpacing' in ctx ? 16 : 0;       // the spacing after the last letter: half of it moves the word off centre
   ctx.fillStyle = rgba(WHITE, 0.88);
-  ctx.fillText('OBSOLETE', VW / 2 + shift, TITLE_Y * VH + lift);
+  const k = Math.min(1, TITLE_MAX * (X1 - X0) / (m.width - 2 * shift));   // smaller on a narrow screen, such as a phone
+  if (k < 1) {
+    ctx.save(); ctx.translate(VW / 2, TITLE_Y * VH); ctx.scale(k, k);
+    ctx.fillText('OBSOLETE', shift, lift);
+    ctx.restore();
+  } else ctx.fillText('OBSOLETE', VW / 2 + shift, TITLE_Y * VH + lift);
   if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
   ctx.textAlign = 'left';
 }
