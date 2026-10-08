@@ -1,0 +1,83 @@
+body {
+  background-color: black;
+  color: rgb(220, 220, 220);
+  padding: 0px 100px;
+}
+h1 {
+  color: rgb(240, 240, 240); font-family:monospace; text-align: center; font-size: 2.5rem;
+}
+p,ul,ol {
+  color: rgb(240, 240, 240); font-family:arial; font-size: 20px; letter-spacing: 0.05em;
+}
+table {
+  color: rgb(220, 220, 220); font-family:arial; font-size: 0.9em; letter-spacing: 0.05em;
+}
+h3 {
+  color: white; bottom:0; font-family:monospace; width: 100%; text-align: center; font-size: 1.5rem;
+}
+a {
+  color: #00ff41;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+.indexlink {
+  color: rgb(240, 240, 240); font-family:arial; font-size: 20px; letter-spacing: 0.05em; padding: 10px 0px;
+}
+img {
+    display: block;
+    max-height: 100%;
+    max-width: 80%;
+    margin: auto;
+}
+.ulink:hover {
+  text-decoration: none;
+}
+@media screen and (max-width: 800px) {
+  
+  img {
+    max-width: 100%;
+}
+}
+@media screen and (max-width: 600px) {
+  body {
+    padding: 0px 20px
+  }
+}
+.loop-stage {
+  display: block; position: relative; width: min(100%, calc(70vh * 16 / 9)); margin: 0 auto;
+}
+.loop-anim {
+  display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; background-color: black; cursor: pointer;
+}
+.loop-stage loop-audio {
+  position: absolute; inset: 0; display: block; pointer-events: none;
+}
+.loop-stage loop-audio::part(button) {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 4.8em; height: 4.8em;
+  background-color: rgba(0, 0, 0, 0.55); pointer-events: auto; transition: opacity 0.2s;
+}
+.loop-stage loop-audio::part(button):hover {
+  background-color: rgba(0, 40, 12, 0.75);
+}
+.loop-stage loop-audio[playing]::part(button) {
+  opacity: 0;
+}
+.loop-stage loop-audio[playing]::part(button):focus-visible {
+  opacity: 1;
+}
+.loop-stage loop-audio::part(volume) {
+  position: absolute; right: 1em; bottom: 0.8em; pointer-events: auto; opacity: 0.75;
+}
+.loop-stage loop-audio::part(volume):hover, .loop-stage loop-audio::part(volume):focus-visible {
+  opacity: 1;
+}
+.loop-stage loop-audio::part(label) {
+  display: none;
+}
+@media screen and (max-width: 600px) {
+  .loop-stage loop-audio {
+    font-size: 13px;
+  }
+}
