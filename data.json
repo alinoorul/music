@@ -1,0 +1,27 @@
+[
+    {
+        "title": "Obsolete (Tame Impala) Recut Loop",
+        "body": [
+            "<loop-audio src='assets/obsolete_loop_2.loop.mp3' loop-start='0.32302' loop-length='18.5'>Obsolete</loop-audio>"
+        ]
+    },
+    {
+        "title": "Dil Chahta Hai Title Song Recut Loop",
+        "body": [
+            "<loop-audio src='assets/dch_loop1.loop.mp3' loop-start='0.32302' loop-length='18.5'>dch</loop-audio>"
+        ]
+    },
+    {
+        "title": "Hey Ya (Shankar Ehsaan Loy) Recut Loop",
+        "body": [
+            "<loop-audio src='assets/heyya_loop2.loop.mp3' loop-start='0.31608' loop-length='16.25'>Hey Ya</loop-audio>"
+        ]
+    },
+    {
+        "title": "Contact",
+        "body": [
+            "Contact <a href='manonthemoon13131@gmail.com'>manonthemoon13131@gmail.com</a> to manage your dex website.",
+            "The Matrix codebase is listed on GitHub <a href='https://github.com/orgs/matrixdex/repositories'>here</a>."
+        ]
+    }
+]

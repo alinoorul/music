@@ -1,0 +1,36 @@
+[
+    {
+        "title": "Sample Page 1",
+        "body": [
+            "This is a sample page. This page is named 'samplepage1.html' in the <a href=\"index.html\">Recut Loops</a> Dex and found in /gen folder. Pages like <a href='samplepage2.html'>Sample Page 2</a> are hyperlinked using human intervention. Automatic search and hyperlink using simple document search will be embedded later.",
+            "Each string in 'body' object of 'data.json', also called <a href='jsonintermediate.html'>JSON intermediate</a>, is a paragraph. JSON intermediate is further explained in the link above.",
+            "Link colors and limited stylistic features of this website can be edited in'styles.css' file in the codebase.",
+            "'Favicon.ico' file in /assets folder in codebase is the icon for this website."
+        ]
+    },
+    {
+        "title": "Sample Page 2",
+        "body": [
+            "This is sample page 2 in the dex."
+        ]
+    },
+    {
+        "title": "JSON intermediate",
+        "body": [
+            "JSON intermediate file named 'data.json' is created in the dex codebase. 'Data.json' is constructed with raw text, PDF and PPTX files added to '/raw' folder in the dex codebase. Make document edits in this JSON intermediate. This raw data file is used as input to generate HTML pages for each item in this list, along with an index page that links to all generated pages."
+        ]
+    },
+    {
+        "title": "Contact",
+        "body": [
+            "Contact <a href='manonthemoon13131@gmail.com'>manonthemoon13131@gmail.com</a> to manage your dex website.",
+            "The Matrix codebase is listed on GitHub <a href='https://github.com/orgs/matrixdex/repositories'>here</a>."
+        ]
+    },
+    {
+        "title": "Hosting",
+        "body": [
+            "GitHub allows free hosting through GitHub pages. Simply create a repository in your account and add all files in the dex folder to that repository. Deploy a website using GitHub pages using 'index.html' in the 'dex' folder as entry point."
+        ]
+    }
+]
