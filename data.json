@@ -8,7 +8,7 @@
     {
         "title": "Dil Chahta Hai Title Song Recut Loop",
         "body": [
-            "<loop-audio src='assets/dch_loop1.loop.mp3' loop-start='0.32302' loop-length='18.5'>dch</loop-audio>"
+            "<span class='loop-stage'><canvas class='loop-anim' width='1920' height='1080' role='img' aria-label='Animation: three stick figure friends walk hand in hand into the wind, dance in the evening, and sing under the stars'></canvas><loop-audio src='assets/dch_loop1.loop.mp3' loop-start='0.32302' loop-length='18.5'>Dil Chahta Hai</loop-audio></span><script src='assets/dch-anim.js' defer></script>"
         ]
     },
     {
