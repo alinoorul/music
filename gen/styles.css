@@ -45,3 +45,10 @@ img {
     padding: 0px 20px
   }
 }
+.loop-anim {
+  display: block; width: min(100%, calc(70vh * 16 / 9)); height: auto; aspect-ratio: 16 / 9;
+  margin: 0 auto; background-color: black; cursor: pointer;
+}
+body:has(.loop-anim) p:has(> loop-audio) {
+  text-align: center;
+}
