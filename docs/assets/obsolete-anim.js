@@ -5,6 +5,7 @@
   On a dex page: a <canvas class="loop-anim">, and a <loop-audio> player in the same parent (else the first on the page).
     <span class="loop-stage"><canvas class="loop-anim" width="1920" height="1080"></canvas><loop-audio ...>Name</loop-audio></span>
     <script src="assets/obsolete-anim.js" defer></script>
+  The canvas can have any size and shape (the page CSS sets it): the scene fills it.
   The animation moves only while the music plays, and follows it to the beat. When the music pauses, it stops.
   A click on the animation plays or pauses the music. Made from obsolete.html: the same scene, without the
   panel, the keys and the export.
@@ -113,7 +114,8 @@ function jointsOf(f, p, t) {
 }
 
 const ctx = cv.getContext('2d', { alpha: false });
-let SC = 1, OX = 0, OY = 0;                            // from the scene to the canvas: fit() sets them
+let SC = 1, OX = 0, OY = 0;                            // from the scene to the canvas: place() sets them
+let X0 = 0, X1 = VW, Y0 = 0, Y1 = VH;                  // the part of the scene that is on the screen
 
 function partial(pts, k) {                             // a polyline drawn up to the fraction k of its length
   if (k <= 0) return;
@@ -196,9 +198,9 @@ function versionsAt(B) {
   return out;
 }
 function burstOf(c) {                                  // the selves me sends out after you answer, in loop c
-  const R = rngOf(mod(c, LOOPS), 2), list = [], N = 11;
-  const free = [[110, ME.x - 170], [ME.x + 170, YOU.x - 150], [YOU.x + 150, 1810]];   // the floor, without me and you
-  const total = free.reduce((a, [p, q]) => a + q - p, 0);
+  const R = rngOf(mod(c, LOOPS), 2), list = [];
+  const free = [[X0 + 110, ME.x - 170], [ME.x + 170, YOU.x - 150], [YOU.x + 150, X1 - 110]].filter(([p, q]) => q - p > 40);   // the floor on the screen, without me and you
+  const total = free.reduce((a, [p, q]) => a + q - p, 0), N = Math.max(5, Math.min(11, Math.round(total / 96)));   // fewer on a narrow screen
   for (let i = 0; i < N; i++) {
     let d = (i + 0.5 + (R() - 0.5) * 0.6) / N * total, x = free[0][0];   // spread evenly, each a little off its mark
     for (const [p, q] of free) { if (d <= q - p) { x = p + d; break; } d -= q - p; }
@@ -334,7 +336,7 @@ function drawFigures(list, t, alphaScale, clipAbove) {
 
 function drawUnder(now, t) {                           // below the glass floor: the reflection, what sank, and the warning sign
   ctx.save();
-  ctx.beginPath(); ctx.rect(0, FLOOR, VW, VH - FLOOR); ctx.clip();
+  ctx.beginPath(); ctx.rect(X0, FLOOR, X1 - X0, Y1 - FLOOR); ctx.clip();
   ctx.save();                                          // the reflection of the two selves, faint
   ctx.translate(0, 2 * FLOOR); ctx.scale(1, -1);
   drawStick(ME, jointsOf(ME, now.me.p, t), WHITE, 0.1);
@@ -352,31 +354,33 @@ function drawUnder(now, t) {                           // below the glass floor:
   ctx.fillStyle = rgba(GREEN, blink); ctx.font = '700 22px ' + SANS; ctx.textAlign = 'center'; ctx.fillText('!', wx, wy + r * 0.45); ctx.textAlign = 'left';
   const grad = ctx.createLinearGradient(0, FLOOR, 0, VH);   // the deeper, the darker
   grad.addColorStop(0, 'rgba(0,0,0,0)'); grad.addColorStop(1, 'rgba(0,0,0,0.85)');
-  ctx.fillStyle = grad; ctx.fillRect(0, FLOOR, VW, VH - FLOOR);
+  ctx.fillStyle = grad; ctx.fillRect(X0, FLOOR, X1 - X0, Y1 - FLOOR);
   ctx.restore();
   ctx.globalCompositeOperation = 'lighter';           // the glass floor
-  const fg = ctx.createLinearGradient(0, 0, VW, 0);
+  const fg = ctx.createLinearGradient(X0, 0, X1, 0);
   fg.addColorStop(0, 'rgba(0,255,65,0)'); fg.addColorStop(0.2, 'rgba(0,255,65,0.22)'); fg.addColorStop(0.8, 'rgba(0,255,65,0.22)'); fg.addColorStop(1, 'rgba(0,255,65,0)');
-  ctx.fillStyle = fg; ctx.fillRect(0, FLOOR - 0.75, VW, 1.5);
+  ctx.fillStyle = fg; ctx.fillRect(X0, FLOOR - 0.75, X1 - X0, 1.5);
   ctx.globalCompositeOperation = 'source-over';
 }
 
 const RAIN = (() => {                                  // faint labels of old drafts (v0.x) falling behind everything
   const R = rng(SEED * 31 + 5), list = [];
-  for (let i = 0; i < 34; i++) list.push({ x: (i / 34) * VW + (R() - 0.5) * 50, y: R() * (VH + 200), v: 1 + ((R() * 3) | 0), s: 11 + R() * 11,
+  for (let i = 0; i < 120; i++) list.push({ jx: (R() - 0.5) * 50, y: R(), v: 1 + ((R() * 3) | 0), s: 11 + R() * 11,
     a: 0.05 + R() * 0.09, k: (R() * 10) | 0 });
   return list;
 })();
 function drawRain(t) {
-  for (const d of RAIN) {
-    const y = mod(d.y + (VH + 200) * d.v * t / periodS(), VH + 200) - 100;   // a whole number of falls in each video loop
+  const w = X1 - X0, h = Y1 - Y0 + 200, n = Math.min(RAIN.length, Math.round(34 * w / VW * Math.max(1, (Y1 - Y0) / VH)));   // 34 on 1920 x 1080
+  for (let i = 0; i < n; i++) {
+    const d = RAIN[i], x = X0 + (i / n) * w + d.jx;
+    const y = Y0 + mod(d.y * h + h * d.v * t / periodS(), h) - 100;   // a whole number of falls in each video loop
     ctx.font = '600 ' + d.s.toFixed(0) + 'px ' + MONO;
     ctx.fillStyle = rgba(GREEN, d.a);
     const name = 'love v0.' + d.k;
-    ctx.fillText(name, d.x, y);
-    const w = ctx.measureText(name + ' ').width;
+    ctx.fillText(name, x, y);
+    const tw = ctx.measureText(name + ' ').width;
     ctx.font = '600 ' + d.s.toFixed(0) + 'px ' + SANS;
-    ctx.fillText('__obsolete', d.x + w, y);
+    ctx.fillText('__obsolete', x + tw, y);
   }
 }
 
@@ -401,7 +405,7 @@ function render(t) {
   ctx.setTransform(SC, 0, 0, SC, OX, OY);
   drawRain(t);
   drawUnder(now, t);
-  ctx.save(); ctx.beginPath(); ctx.rect(0, 0, VW, FLOOR); ctx.clip();   // above the floor
+  ctx.save(); ctx.beginPath(); ctx.rect(X0, Y0, X1 - X0, FLOOR - Y0); ctx.clip();   // above the floor
   drawThreads(now);
   drawSignals(now, t);
   drawFigures(now.up, t, 1);
@@ -421,13 +425,22 @@ const START = 37;
 const music = (cv.parentElement && cv.parentElement.querySelector('loop-audio')) || document.querySelector('loop-audio');
 const timeNow = () => START + (music ? music.time : 0);
 
-function fit() {                                       // as sharp as the screen, but not more than the scene needs
-  const box = cv.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const w = Math.max(320, Math.min(VW, Math.round(box.width * dpr))), h = Math.round(w * VH / VW);
+function fit() {                                       // as sharp as the screen, up to about 3.7 million pixels
+  const box = cv.getBoundingClientRect();
+  const k = Math.min(window.devicePixelRatio || 1, Math.sqrt(3.7e6 / Math.max(1, box.width * box.height)));
+  const w = Math.max(16, Math.round(box.width * k)), h = Math.max(16, Math.round(box.height * k));
   if (w === cv.width && h === cv.height) return false;
   cv.width = W = w; cv.height = H = h;
-  SC = Math.min(W / VW, H / VH); OX = (W - VW * SC) / 2; OY = (H - VH * SC) / 2;
+  place();
   return true;
+}
+
+// The scene is 1920 x 1080, but the screen can have any shape. The middle of the scene (the two selves and the title,
+// MIDDLE wide) always shows, as big as it can; the falling labels, the floor and the dark below it fill the rest.
+const MIDDLE = 1000;
+function place() {
+  SC = Math.min(H / VH, W / MIDDLE); OX = W / 2 - VW / 2 * SC; OY = H / 2 - VH / 2 * SC;
+  X0 = -OX / SC; X1 = (W - OX) / SC; Y0 = -OY / SC; Y1 = (H - OY) / SC;
 }
 
 let dirty = true, shown = true, drawn = NaN, raf = 0, ready = false;

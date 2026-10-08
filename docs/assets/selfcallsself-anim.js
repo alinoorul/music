@@ -5,6 +5,7 @@
   On a dex page: a <canvas class="loop-anim">, and a <loop-audio> player in the same parent (else the first on the page).
     <span class="loop-stage"><canvas class="loop-anim" width="1920" height="1080"></canvas><loop-audio ...>Name</loop-audio></span>
     <script src="assets/selfcallsself-anim.js" defer></script>
+  The canvas can have any size and shape (the page CSS sets it): the scene fills it.
   The animation moves only while the music plays. It starts with the lone self and does not stop at the end of
   the loop; when the music pauses, it stops.
   A click on the animation plays or pauses the music. Made from self-calls-self.html: the same scene, without the
@@ -19,8 +20,8 @@ if (!cv || !cv.getContext) return;
 const LOOP = 180;                                      // after the first tide, the scene repeats after this many seconds: 3 different tides
 let W = 1920, H = 1080;                                // the canvas size: fit() sets it
 const SEED = 7;
-const VW = 1920, VH = 1080;                            // the scene is drawn in this space, then scaled
-const CX = 960, CY = 545, SELF_H = 190;                // where the centre self stands, and its height in pixels
+let VW = 1920, VH = 1080;                              // the scene is drawn in this space, then scaled
+let CX = 960, CY = 545; const SELF_H = 190;            // where the centre self stands, and its height in pixels
 const WHITE = [255, 255, 255], GREEN = [0, 255, 65];
 const PLACE_GAP = 135;                                 // places where a self can stand are scattered at random, at least this far apart
 const TIDE = 60;                                       // seconds from one low tide to the next: the screen fills, then empties (low tide: about 8 s)
@@ -82,7 +83,7 @@ function build() {
     pts.push({ x, y });
   }
   const slots = pts.map((p, i) => {
-    const far = clamp01(Math.hypot((p.x - CX) / 900, (p.y - CY) / 500));   // far from the centre: smaller and dimmer, for depth
+    const far = clamp01(Math.hypot((p.x - CX) / (CX - 60), (p.y - CY) / (CY - 45)));   // far from the centre: smaller and dimmer, for depth
     return { id: i + 1, x0: p.x, y0: p.y, h: SELF_H * Math.min(0.6, lerp(0.58, 0.27, far) * (0.88 + 0.24 * R())),
       color: GREEN.map((v) => v * Math.min(1, lerp(1, 0.6, far) * (0.9 + 0.2 * R()))), ph: R() * 6.283, fq: 0.8 + 0.4 * R(),
       resident: false, ups: [], phones: [], flashes: [] };
@@ -97,7 +98,7 @@ function build() {
   for (let i = 0; i < 90; i++) dust.push({ x: R() * VW, y: R() * VH, n: 1 + ((R() * 4) | 0), a: 0.04 + R() * 0.12, s: 1.2 + R() * 1.4, ph: R() * 6.283 });
   return { self, sc: chest(self), slots, dust };
 }
-const S = build();
+let S = build();
 
 const early = (R, [a, b]) => b - (b - a) * Math.sqrt(R());          // random in [a, b], most often near a: selves pour out as the tide turns
 const late = (R, [a, b]) => a + (b - a) * Math.sqrt(R());           // random in [a, b], most often near b: selves pour home before low tide
@@ -128,9 +129,6 @@ function lifeAt(s, t, pattern) {                       // the latest life at a p
 }
 // The real timeline differs from the repeating pattern only near the start, while lives born before 0 are hidden.
 const STEADY = 0.4 * TP + 4;
-let lf = STEADY;                                       // LOOP_FROM: from here the scene repeats exactly every LOOP seconds
-for (const s of S.slots) for (let c = -1; c * TP < STEADY + TP; c++) { const L = lifeIn(s, c); if (L.start < STEADY) lf = Math.max(lf, L.start + L.g.home + 1); }
-const LOOP_FROM = lf;
 
 const okAt = (L, t) => { const u = t - L.start; return u >= L.g.grown + 0.15 && u <= L.g.life - 0.6; };
 function aliveOver(s, a, b, pattern) {                 // free to talk from a to b
@@ -390,13 +388,33 @@ const START = 0;                                       // music time 0 is the st
 const music = (cv.parentElement && cv.parentElement.querySelector('loop-audio')) || document.querySelector('loop-audio');
 const timeNow = () => START + (music ? music.time : 0);
 
-function fit() {                                       // as sharp as the screen, but not more than the scene needs
-  const box = cv.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const w = Math.max(320, Math.min(VW, Math.round(box.width * dpr))), h = Math.round(w * VH / VW);
+function fit() {                                       // as sharp as the screen, up to about 3.7 million pixels
+  const box = cv.getBoundingClientRect();
+  const k = Math.min(window.devicePixelRatio || 1, Math.sqrt(3.7e6 / Math.max(1, box.width * box.height)));
+  const w = Math.max(16, Math.round(box.width * k)), h = Math.max(16, Math.round(box.height * k));
   if (w === cv.width && h === cv.height) return false;
   cv.width = W = w; cv.height = H = h;
-  SC = Math.min(W / VW, H / VH); OX = (W - VW * SC) / 2; OY = (H - VH * SC) / 2;
+  place();
   return true;
+}
+
+// The scene takes the shape of the screen: its places are scattered over the whole screen. Its area is that of
+// 1920 x 1080, or less on a small screen (down to half), so that the selves are not too small there. When the shape
+// changes, the scene is made again for the new shape once the resizing stops.
+let shaped = 0, reshape = 0;                           // the shape (width / height) that the scene was made for
+function shape() {
+  const cw = cv.clientWidth || W, ch = cv.clientHeight || H;
+  const area = 1920 * 1080 * Math.min(1, Math.max(0.5, cw * ch / (1280 * 800)));
+  VW = Math.sqrt(area * cw / ch); VH = area / VW; CX = VW / 2; CY = VH / 2 + 5;
+  geoms.clear(); callCache.clear(); S = build(); shaped = cw / ch;
+}
+function place() {
+  if (!shaped) shape();
+  else if (Math.abs(W / H / shaped - 1) > 0.02) {
+    clearTimeout(reshape);
+    reshape = setTimeout(() => { shape(); place(); drawn = NaN; wake(); }, 300);
+  }
+  SC = Math.min(W / VW, H / VH); OX = (W - VW * SC) / 2; OY = (H - VH * SC) / 2;   // until then: all of the old scene
 }
 
 let dirty = true, shown = true, drawn = NaN, raf = 0, ready = false;
