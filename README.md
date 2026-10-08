@@ -42,6 +42,9 @@ Make an mp4 music video from one audio file and one picture or video clip
   comes from the audio file; any sound inside the mp4 clip is discarded.
 - The audio sets the length. An image is held for the whole song; a clip
   shorter than the song loops, a longer one is cut off.
-- Output is 16:9, 1080p, 30 fps, h264 + aac by default. If the picture isn't
+- Output is 16:9, 60 fps, h264 + aac by default: 4K (3840x2160) if the mp4
+  clip is 4K, otherwise 1080p (all images get 1080p). Override with `height=`
+  and `fps=`. A 30 fps clip at 60 fps just repeats frames. 4K 60 fps takes a
+  long time to encode. If the picture isn't
   16:9, `fit="pad"` adds black bars (default), `"crop"` fills the frame and
   trims the edges, `"stretch"` distorts it.
