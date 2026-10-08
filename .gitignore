@@ -1,3 +1,5 @@
 __pycache__/
 *.pyc
 raw_music/
+raw_video/
+output/
