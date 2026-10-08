@@ -6,5 +6,5 @@
     "page_javascript": "<script src='assets/loop-audio.js'></script>",
     "index_javascript": "",
     "index_list_type_para": false,
-    "index_list_no_page_link_only": false
+    "index_list_no_page_link_only": true
 }
