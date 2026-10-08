@@ -42,6 +42,8 @@ const fontReady = (() => {                             // Josefin Sans, from the
   } catch (e) { return Promise.resolve(); }
 })();
 const LEAD = 0.35;                                     // beats the wifi arcs take to light up before a signal flies
+const PACE = 1.25;                                    // the scene runs this many times as fast as the music
+const PIVOT = 37;                                      // ... with the same time as the music here (the start of the loop on the web page)
 const SPEED = 70;                                      // scene pixels the friends walk in one beat: one step on each beat
 const FRIENDS = [                                      // x by day, x at night (closer together), height, colour, scarf colour
   { x: 818, gx: 838, h: 224, color: GREEN, scarf: WHITE, ph: 0.4 },
@@ -508,6 +510,7 @@ function drawTitle() {                                 // DIL CHAHTA HAI: centre
 }
 
 function render(t) {
+  t = PIVOT + (t - PIVOT) * PACE;                      // the scene's own time
   const now = scene(t);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.globalCompositeOperation = 'source-over';
@@ -529,7 +532,8 @@ function render(t) {
 }
 
 // The time t of the scene is the time in dch_loop1.mp3, the ten-loop file it was fitted to. The player plays one
-// loop, cut at 37 s (two loops) into that file, so its time 0 is t = 37: the end of a night, just before dawn.
+// loop, cut at 37 s (two loops) into that file, so its time 0 is t = 37 (render() makes the scene run PACE times
+// as fast from there): the end of a night, just before dawn.
 const START = 37;
 
 // ---------- on the dex page: fit the canvas, follow the music, draw ----------

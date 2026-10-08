@@ -10,16 +10,28 @@
   the loop; when the music pauses, it stops.
   A click on the animation plays or pauses the music. Made from self-calls-self.html: the same scene, without the
   panel, the keys and the export.
+  Its title, HEY YA, is Josefin Sans (SIL Open Font License 1.1), from josefin-sans.woff2 next to this script.
 */
 (() => {
 'use strict';
 const cv = document.querySelector('canvas.loop-anim');
 if (!cv || !cv.getContext) return;
-
+const HERE = document.currentScript ? document.currentScript.src : location.href;
 // ---------- settings ----------
 const LOOP = 180;                                      // after the first tide, the scene repeats after this many seconds: 3 different tides
 let W = 1920, H = 1080;                                // the canvas size: fit() sets it
 const SEED = 7;
+const SHOW_TITLE = true;
+const TITLE_Y = 0.17, TITLE_MAX = 0.6;                 // the middle of the title's letters, as a part of the height from the top;
+                                                       // the title is at most TITLE_MAX of the screen width
+const SANS = "'Josefin Sans', sans-serif";             // the title is Josefin Sans, as in Obsolete and Dil Chahta Hai
+const fontReady = (() => {                             // Josefin Sans, from the file next to this script
+  try {
+    const face = new FontFace('Josefin Sans', 'url(' + new URL('josefin-sans.woff2', HERE).href + ')', { weight: '100 700' });
+    document.fonts.add(face);
+    return Promise.race([face.load(), new Promise((ok) => setTimeout(ok, 4000))]).catch(() => {});
+  } catch (e) { return Promise.resolve(); }
+})();
 let VW = 1920, VH = 1080;                              // the scene is drawn in this space, then scaled
 let CX = 960, CY = 545; const SELF_H = 190;            // where the centre self stands, and its height in pixels
 const WHITE = [255, 255, 255], GREEN = [0, 255, 65];
@@ -367,6 +379,22 @@ function drawDust(t) {
   }
 }
 
+function drawTitle() {                                 // HEY YA: centred across, its letters centred at TITLE_Y of the height
+  if (!SHOW_TITLE) return;
+  ctx.font = '600 136px ' + SANS;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  if ('letterSpacing' in ctx) ctx.letterSpacing = '32px';
+  const text = 'HEY YA', m = ctx.measureText(text), lift = ((m.actualBoundingBoxAscent || 98) - (m.actualBoundingBoxDescent || 0)) / 2;
+  const shift = 'letterSpacing' in ctx ? 16 : 0;       // the spacing after the last letter: half of it moves the words off centre
+  ctx.fillStyle = rgba(WHITE, 0.88);
+  const k = Math.min(1, TITLE_MAX * VW / (m.width - 2 * shift));   // smaller on a narrow screen, such as a phone
+  ctx.save(); ctx.translate(VW / 2, TITLE_Y * VH); ctx.scale(k, k);
+  ctx.fillText(text, shift, lift);
+  ctx.restore();
+  if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+  ctx.textAlign = 'left';
+}
+
 function render(t) {
   const now = prepare(t);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -378,6 +406,7 @@ function render(t) {
   drawWaves(now, t);
   for (const s of S.slots) if (s.on) drawFigure(s, t);   // far selves first
   drawFigure(S.self, t);
+  drawTitle();
 }
 
 const START = 0;                                       // music time 0 is the start: the white self alone
@@ -435,5 +464,5 @@ if (window.IntersectionObserver) new IntersectionObserver((es) => { shown = es[e
 if (music) { music.addEventListener('play', wake); music.addEventListener('pause', wake); }
 cv.addEventListener('click', () => { if (music && music.toggle) music.toggle(); });   // a click on the animation plays or pauses the music
 cv.loopAnim = { time: timeNow, render };               // for tests
-ready = true; wake();
+fontReady.then(() => { ready = true; wake(); });   // no frame with a stand-in font
 })();
