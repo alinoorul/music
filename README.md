@@ -1,5 +1,5 @@
 # music
-Music made by programs made by ALINOORUL
+Music made by programs made by Alinoorul
 
 ## tracktool.py
 
