@@ -2,9 +2,10 @@
   Obsolete: the animation for the Obsolete recut loop. A white self calls a green self that does not answer; each
   version of its love calls too, gets no answer, is labelled "__obsolete" and sinks through the glass floor.
 
-  On a dex page: a <canvas class="loop-anim"> before this script, and a <loop-audio> player on the same page.
-    <canvas class="loop-anim" width="1920" height="1080"></canvas><script src="assets/obsolete-anim.js" defer></script>
-  While the music plays, the animation follows it to the beat. While it does not, the animation runs on its own.
+  On a dex page: a <canvas class="loop-anim">, and a <loop-audio> player in the same parent (else the first on the page).
+    <span class="loop-stage"><canvas class="loop-anim" width="1920" height="1080"></canvas><loop-audio ...>Name</loop-audio></span>
+    <script src="assets/obsolete-anim.js" defer></script>
+  The animation moves only while the music plays, and follows it to the beat. When the music pauses, it stops.
   A click on the animation plays or pauses the music. Made from obsolete.html: the same scene, without the
   panel, the keys and the export.
   Josefin Sans (SIL Open Font License 1.1) comes from josefin-sans.woff2 next to this script.
@@ -410,11 +411,15 @@ function render(t) {
   drawTitle();
 }
 
-// ---------- on the dex page: fit the canvas, keep time, draw each frame ----------
-const still = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
-let player = null;
-const music = () => player || (player = document.querySelector('loop-audio'));
-const playing = () => { const p = music(); return !!(p && p.playing); };
+// The time t of the scene is the time in obsolete_loop_2.mp3, the five-loop file it was fitted to. The player plays
+// one loop, cut at 37 s (two loops) into that file, so its time 0 is t = 37.
+const START = 37;
+
+// ---------- on the dex page: fit the canvas, follow the music, draw ----------
+// The scene moves only while the music plays: the time of the scene is the time of the music. When the music pauses,
+// the scene stops at the same point, and goes on from there when the music plays again.
+const music = (cv.parentElement && cv.parentElement.querySelector('loop-audio')) || document.querySelector('loop-audio');
+const timeNow = () => START + (music ? music.time : 0);
 
 function fit() {                                       // as sharp as the screen, but not more than the scene needs
   const box = cv.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -425,35 +430,23 @@ function fit() {                                       // as sharp as the screen
   return true;
 }
 
-// The time t of the scene is the time in obsolete_loop_2.mp3, the five-loop file it was fitted to. The player plays
-// one loop, cut at 37 s (two loops) into that file, so its time 0 is t = 37, or t = 37 plus any whole number of loops.
-// While the music plays, the scene follows it: when the music starts, the scene goes to the same point in the loop
-// (the nearest one of the five). While the music does not play, the scene runs on its own clock (with reduced motion,
-// it stops).
-const AT = 37, LEN = 18.5;                             // where the player's loop starts in the file, and its length
-let last = AT, from = AT, at = performance.now(), base = null;
-function timeAt(ms) {
-  if (playing()) {
-    if (base === null) base = AT + LEN * Math.round((last - AT - music().time) / LEN);
-    return (last = base + music().time);
+let dirty = true, shown = true, drawn = NaN, raf = 0, ready = false;
+function tick() {
+  raf = 0;
+  if (!ready) return;
+  if (shown) {                                         // off the screen: draw nothing
+    if (dirty) { dirty = false; if (fit()) drawn = NaN; }
+    const t = timeNow();
+    if (t !== drawn) { render(t); drawn = t; }
   }
-  if (base !== null || still.matches) { base = null; from = last; at = ms; }   // the music stopped: go on from here
-  if (still.matches) return last;
-  return (last = from + Math.max(0, ms - at) / 1000);
+  if (music && music.playing) raf = requestAnimationFrame(tick);   // paused: no more frames until something changes
 }
-
-let dirty = true, shown = true, drawn = NaN;
-if (window.ResizeObserver) new ResizeObserver(() => { dirty = true; }).observe(cv);
-else addEventListener('resize', () => { dirty = true; });
-if (window.IntersectionObserver) new IntersectionObserver((es) => { shown = es[es.length - 1].isIntersecting; }).observe(cv);
-function frame(ms) {
-  requestAnimationFrame(frame);
-  const t = timeAt(ms);
-  if (!shown) return;                                  // off the screen: keep time, draw nothing
-  if (dirty) { dirty = false; if (fit()) drawn = NaN; }
-  if (t !== drawn) { render(t); drawn = t; }
-}
-cv.addEventListener('click', () => { const p = music(); if (p && p.toggle) p.toggle(); });   // a click on the animation plays or pauses the music
-cv.loopAnim = { time: () => last, render };            // for tests
-fontReady.then(() => requestAnimationFrame(frame));   // no frame with a stand-in font
+const wake = () => { if (!raf) raf = requestAnimationFrame(tick); };
+if (window.ResizeObserver) new ResizeObserver(() => { dirty = true; wake(); }).observe(cv);
+else addEventListener('resize', () => { dirty = true; wake(); });
+if (window.IntersectionObserver) new IntersectionObserver((es) => { shown = es[es.length - 1].isIntersecting; wake(); }).observe(cv);
+if (music) { music.addEventListener('play', wake); music.addEventListener('pause', wake); }
+cv.addEventListener('click', () => { if (music && music.toggle) music.toggle(); });   // a click on the animation plays or pauses the music
+cv.loopAnim = { time: timeNow, render };               // for tests
+fontReady.then(() => { ready = true; wake(); });   // no frame with a stand-in font
 })();

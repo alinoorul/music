@@ -16,6 +16,8 @@
 
   Properties: playing, time (seconds of music played, counting every loop: use it to drive an animation), loopTime
   (seconds into the loop). Methods: play(), pause(), toggle(). Events: 'play', 'pause', 'error'.
+  While it plays, the element has the attribute playing. The page CSS can style the parts button, volume and label,
+  for example loop-audio[playing]::part(button) { opacity: 0; }
   Only one <loop-audio> plays at a time on a page. Browsers play sound only after the visitor clicks, so the button
   starts it. Serve the page over http(s): browsers do not let a page fetch files from file://.
 */
@@ -43,6 +45,7 @@
         :host { display: inline-flex; align-items: center; gap: .7em; color: inherit; font: inherit; vertical-align: middle; }
         button { all: unset; box-sizing: border-box; cursor: pointer; width: 2.4em; height: 2.4em; border-radius: 50%;
                  display: grid; place-items: center; color: #00ff41; border: 1px solid currentColor; }
+        button svg { width: 30%; height: 30%; }
         button:hover { background: rgba(0, 255, 65, .12); }
         button:focus-visible, input:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
         button[aria-busy='true'] { opacity: .5; cursor: progress; }
@@ -56,7 +59,7 @@
       this._vol = root.querySelector('input');
       this._btn.addEventListener('click', () => this.toggle());
       this._vol.addEventListener('input', () => this._setVolume(this._vol.value / 100, true));
-      this._src = null; this._pos = 0; this._load = null; this._gainNode = null;
+      this._src = null; this._pos = 0; this._from = 0; this._load = null; this._gainNode = null;
     }
     connectedCallback() {
       players.add(this);
@@ -71,7 +74,7 @@
     get loopStart() { const v = parseFloat(this.getAttribute('loop-start')); return Number.isFinite(v) && v >= 0 ? v : 0; }
     get loopLength() { const v = parseFloat(this.getAttribute('loop-length')); return Number.isFinite(v) && v > 0 ? v : null; }
     get playing() { return !!this._src; }
-    get time() { return this._src ? Math.max(0, heard() - this._t0) : this._pos; }
+    get time() { return this._src ? Math.max(this._from, heard() - this._t0) : this._pos; }   // not before the start point
     get loopTime() { const n = this._len || this.loopLength; return n ? this.time % n : this.time; }
 
     load() {                                           // fetch and decode once; decoding needs no click
@@ -100,6 +103,7 @@
         s.start(at, this.loopStart + (this._pos % len));
         this._src = s; this._len = len;
         this._t0 = at - this._pos;                     // time = what is heard now (heard() counts the output delay)
+        this._from = this._pos;
         this._show(true);
         this.dispatchEvent(new Event('play'));
       } catch (e) { this._fail(e); }
@@ -132,6 +136,7 @@
       if (now) p.value = g; else p.setTargetAtTime(g, ctx.currentTime, 0.03);
     }
     _show(on) {
+      this.toggleAttribute('playing', on);
       this._btn.innerHTML = on ? PAUSE : PLAY;
       const name = this.textContent.trim();
       this._btn.setAttribute('aria-label', (on ? 'Pause' : 'Play') + (name ? ' ' + name : ''));

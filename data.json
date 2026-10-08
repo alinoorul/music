@@ -2,8 +2,7 @@
     {
         "title": "Obsolete (Tame Impala) Recut Loop",
         "body": [
-            "<canvas class='loop-anim' width='1920' height='1080' role='img' aria-label='Animation: a white stick figure calls a green stick figure that does not answer'></canvas><script src='assets/obsolete-anim.js' defer></script>",
-            "<loop-audio src='assets/obsolete_loop_2.loop.mp3' loop-start='0.32302' loop-length='18.5'>Obsolete</loop-audio>"
+            "<span class='loop-stage'><canvas class='loop-anim' width='1920' height='1080' role='img' aria-label='Animation: a white stick figure calls a green stick figure that does not answer'></canvas><loop-audio src='assets/obsolete_loop_2.loop.mp3' loop-start='0.32302' loop-length='18.5'>Obsolete</loop-audio></span><script src='assets/obsolete-anim.js' defer></script>"
         ]
     },
     {
@@ -15,8 +14,7 @@
     {
         "title": "Hey Ya (Shankar Ehsaan Loy) Recut Loop",
         "body": [
-            "<canvas class='loop-anim' width='1920' height='1080' role='img' aria-label='Animation: green stick figures come out of a white stick figure, call each other, and go back into it'></canvas><script src='assets/selfcallsself-anim.js' defer></script>",
-            "<loop-audio src='assets/heyya_loop2.loop.mp3' loop-start='0.31608' loop-length='16.25'>Hey Ya</loop-audio>"
+            "<span class='loop-stage'><canvas class='loop-anim' width='1920' height='1080' role='img' aria-label='Animation: green stick figures come out of a white stick figure, call each other, and go back into it'></canvas><loop-audio src='assets/heyya_loop2.loop.mp3' loop-start='0.31608' loop-length='16.25'>Hey Ya</loop-audio></span><script src='assets/selfcallsself-anim.js' defer></script>"
         ]
     },
     {

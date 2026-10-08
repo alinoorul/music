@@ -2,9 +2,11 @@
   Self Calls Self: the animation for the Hey Ya recut loop. Green selves come out of one white self, call each
   other with wifi signals, and fold up and fly home into it, in tides.
 
-  On a dex page: a <canvas class="loop-anim"> before this script, and a <loop-audio> player on the same page.
-    <canvas class="loop-anim" width="1920" height="1080"></canvas><script src="assets/selfcallsself-anim.js" defer></script>
-  The animation runs on its own clock, from the lone self at the start, and does not stop at the end.
+  On a dex page: a <canvas class="loop-anim">, and a <loop-audio> player in the same parent (else the first on the page).
+    <span class="loop-stage"><canvas class="loop-anim" width="1920" height="1080"></canvas><loop-audio ...>Name</loop-audio></span>
+    <script src="assets/selfcallsself-anim.js" defer></script>
+  The animation moves only while the music plays. It starts with the lone self and does not stop at the end of
+  the loop; when the music pauses, it stops.
   A click on the animation plays or pauses the music. Made from self-calls-self.html: the same scene, without the
   panel, the keys and the export.
 */
@@ -380,11 +382,13 @@ function render(t) {
   drawFigure(S.self, t);
 }
 
-// ---------- on the dex page: fit the canvas, keep time, draw each frame ----------
-const still = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
-let player = null;
-const music = () => player || (player = document.querySelector('loop-audio'));
-const playing = () => { const p = music(); return !!(p && p.playing); };
+const START = 0;                                       // music time 0 is the start: the white self alone
+
+// ---------- on the dex page: fit the canvas, follow the music, draw ----------
+// The scene moves only while the music plays: the time of the scene is the time of the music. When the music pauses,
+// the scene stops at the same point, and goes on from there when the music plays again.
+const music = (cv.parentElement && cv.parentElement.querySelector('loop-audio')) || document.querySelector('loop-audio');
+const timeNow = () => START + (music ? music.time : 0);
 
 function fit() {                                       // as sharp as the screen, but not more than the scene needs
   const box = cv.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -395,26 +399,23 @@ function fit() {                                       // as sharp as the screen
   return true;
 }
 
-const STILL_AT = 40;                                   // with reduced motion: a still frame with many selves
-// The scene runs on its own clock: it does not follow the music. With reduced motion, it moves only while the music plays.
-let last = still.matches ? STILL_AT : 0, from = last, at = performance.now();
-function timeAt(ms) {
-  if (still.matches && !playing()) { from = last; at = ms; return last; }
-  return (last = from + Math.max(0, ms - at) / 1000);
+let dirty = true, shown = true, drawn = NaN, raf = 0, ready = false;
+function tick() {
+  raf = 0;
+  if (!ready) return;
+  if (shown) {                                         // off the screen: draw nothing
+    if (dirty) { dirty = false; if (fit()) drawn = NaN; }
+    const t = timeNow();
+    if (t !== drawn) { render(t); drawn = t; }
+  }
+  if (music && music.playing) raf = requestAnimationFrame(tick);   // paused: no more frames until something changes
 }
-
-let dirty = true, shown = true, drawn = NaN;
-if (window.ResizeObserver) new ResizeObserver(() => { dirty = true; }).observe(cv);
-else addEventListener('resize', () => { dirty = true; });
-if (window.IntersectionObserver) new IntersectionObserver((es) => { shown = es[es.length - 1].isIntersecting; }).observe(cv);
-function frame(ms) {
-  requestAnimationFrame(frame);
-  const t = timeAt(ms);
-  if (!shown) return;                                  // off the screen: keep time, draw nothing
-  if (dirty) { dirty = false; if (fit()) drawn = NaN; }
-  if (t !== drawn) { render(t); drawn = t; }
-}
-cv.addEventListener('click', () => { const p = music(); if (p && p.toggle) p.toggle(); });   // a click on the animation plays or pauses the music
-cv.loopAnim = { time: () => last, render };            // for tests
-requestAnimationFrame(frame);
+const wake = () => { if (!raf) raf = requestAnimationFrame(tick); };
+if (window.ResizeObserver) new ResizeObserver(() => { dirty = true; wake(); }).observe(cv);
+else addEventListener('resize', () => { dirty = true; wake(); });
+if (window.IntersectionObserver) new IntersectionObserver((es) => { shown = es[es.length - 1].isIntersecting; wake(); }).observe(cv);
+if (music) { music.addEventListener('play', wake); music.addEventListener('pause', wake); }
+cv.addEventListener('click', () => { if (music && music.toggle) music.toggle(); });   // a click on the animation plays or pauses the music
+cv.loopAnim = { time: timeNow, render };               // for tests
+ready = true; wake();
 })();

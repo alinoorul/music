@@ -45,10 +45,39 @@ img {
     padding: 0px 20px
   }
 }
-.loop-anim {
-  display: block; width: min(100%, calc(70vh * 16 / 9)); height: auto; aspect-ratio: 16 / 9;
-  margin: 0 auto; background-color: black; cursor: pointer;
+.loop-stage {
+  display: block; position: relative; width: min(100%, calc(70vh * 16 / 9)); margin: 0 auto;
 }
-body:has(.loop-anim) p:has(> loop-audio) {
-  text-align: center;
+.loop-anim {
+  display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; background-color: black; cursor: pointer;
+}
+.loop-stage loop-audio {
+  position: absolute; inset: 0; display: block; pointer-events: none;
+}
+.loop-stage loop-audio::part(button) {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 4.8em; height: 4.8em;
+  background-color: rgba(0, 0, 0, 0.55); pointer-events: auto; transition: opacity 0.2s;
+}
+.loop-stage loop-audio::part(button):hover {
+  background-color: rgba(0, 40, 12, 0.75);
+}
+.loop-stage loop-audio[playing]::part(button) {
+  opacity: 0;
+}
+.loop-stage loop-audio[playing]::part(button):focus-visible {
+  opacity: 1;
+}
+.loop-stage loop-audio::part(volume) {
+  position: absolute; right: 1em; bottom: 0.8em; pointer-events: auto; opacity: 0.75;
+}
+.loop-stage loop-audio::part(volume):hover, .loop-stage loop-audio::part(volume):focus-visible {
+  opacity: 1;
+}
+.loop-stage loop-audio::part(label) {
+  display: none;
+}
+@media screen and (max-width: 600px) {
+  .loop-stage loop-audio {
+    font-size: 13px;
+  }
 }
