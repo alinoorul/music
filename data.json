@@ -16,11 +16,5 @@
         "body": [
             "<span class='loop-stage'><canvas class='loop-anim' width='1920' height='1080' role='img' aria-label='Animation: green stick figures come out of a white stick figure, call each other, and go back into it'></canvas><loop-audio src='assets/heyya_loop2.loop.mp3' loop-start='0.31608' loop-length='16.25'>Hey Ya</loop-audio></span><script src='assets/selfcallsself-anim.js' defer></script>"
         ]
-    },
-    {
-        "title": "Contact",
-        "body": [
-            "<a href='mailto:manonthemoon13131@gmail.com'>manonthemoon13131@gmail.com</a>"
-        ]
     }
 ]
