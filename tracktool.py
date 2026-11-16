@@ -109,18 +109,31 @@ def cut(input, start=0, end=None, output=None, force=False):
     return out
 
 
-def build_unit(seg_path, unit_path, fade):
+def build_unit(seg_path, unit_path, fade, gap=0.0):
     """Turn a segment into a unit that repeats seamlessly.
 
     The last `fade` seconds of the segment are blended into its first `fade`
     seconds, so the sample after the unit's end is the one that originally
     followed it. Repeating the unit then has no click or jump.
+
+    With `gap` > 0 the unit instead ends in `gap` seconds of silence (the
+    segment's last 50 ms fade out and its first 10 ms fade in, so the edges
+    don't click).
     """
     with wave.open(str(seg_path)) as w:
         ch, rate, frames = w.getnchannels(), w.getframerate(), w.getnframes()
         data = array("h", w.readframes(frames))
     n = int(round(fade * rate))
-    if n == 0:
+    if gap > 0:
+        for count, edge in ((int(0.05 * rate), "out"), (int(0.01 * rate), "in")):
+            count = min(count, len(data) // ch // 4)
+            for i in range(count):
+                g = (i + 0.5) / count  # 0 -> 1 across the fade
+                for c in range(ch):
+                    k = (len(data) // ch - count + i) * ch + c if edge == "out" else i * ch + c
+                    data[k] = int(round(data[k] * ((1 - g) if edge == "out" else g)))
+        unit = data + array("h", bytes(int(round(gap * rate)) * ch * 2))
+    elif n == 0:
         unit = data
     else:
         head, tail = data[:n * ch], data[-n * ch:]
@@ -142,13 +155,15 @@ def build_unit(seg_path, unit_path, fade):
 
 
 def loop(input, start=0, end=None, times=None, duration=None, crossfade=0.0,
-         output=None, force=False):
+         gap=0.0, output=None, force=False):
     """Repeat the part of `input` between `start` and `end`, seamlessly.
 
     Give exactly one of `times` (number of repeats) or `duration` (approximate
     result length; rounded to a whole number of repeats). `crossfade` is the
     number of seconds blended across the loop point so the end flows into the
-    start. Use .wav or .flac output for a gapless loop. Returns the output path.
+    start. `gap` instead puts that many seconds of silence after every repeat
+    (it can't be combined with `crossfade`). Use .wav or .flac output for a
+    gapless loop. Returns the output path.
     """
     require_ffmpeg()
     src = Path(input)
@@ -157,6 +172,11 @@ def loop(input, start=0, end=None, times=None, duration=None, crossfade=0.0,
     fade = float(crossfade)
     if fade < 0 or fade * 2 >= seg_len:
         raise TrackToolError(f"crossfade must be >= 0 and under half the segment ({seg_len:.2f}s)")
+    gap = float(gap)
+    if gap < 0:
+        raise TrackToolError("gap must be >= 0")
+    if gap > 0 and fade > 0:
+        raise TrackToolError("gap and crossfade can't be combined")
     if (times is None) == (duration is None):
         raise TrackToolError("give exactly one of times or duration")
     if duration is not None:
@@ -173,7 +193,7 @@ def loop(input, start=0, end=None, times=None, duration=None, crossfade=0.0,
         seg, unit = Path(tmp) / "seg.wav", Path(tmp) / "unit.wav"
         run(["ffmpeg", "-y", "-v", "error", "-i", str(src), "-ss", f"{start}",
              "-to", f"{end}", "-vn", "-c:a", "pcm_s16le", str(seg)])
-        unit_len = build_unit(seg, unit, fade)
+        unit_len = build_unit(seg, unit, fade, gap)
         if times is not None:
             if times < 1:
                 raise TrackToolError("times must be at least 1")
@@ -213,6 +233,8 @@ def main():
                         help="approx. target length (rounded to a whole number of repeats)")
     loop_p.add_argument("--crossfade", type=float, default=0.0,
                         help="seconds blended across the loop point so the end flows into the start")
+    loop_p.add_argument("--gap", type=float, default=0.0,
+                        help="seconds of silence after each repeat (not with --crossfade)")
 
     args = parser.parse_args()
     try:
@@ -220,7 +242,7 @@ def main():
             cut(args.input, args.start, args.end, args.output, args.force)
         else:
             loop(args.input, args.start, args.end, args.times, args.duration,
-                 args.crossfade, args.output, args.force)
+                 args.crossfade, args.gap, args.output, args.force)
     except TrackToolError as e:
         sys.exit(str(e))
 

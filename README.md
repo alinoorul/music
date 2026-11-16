@@ -17,6 +17,9 @@ Times are seconds or strings like `"1:15"`. Both return the output path, and
 raise `tracktool.TrackToolError` on bad arguments or an ffmpeg failure. Pass
 `force=True` to overwrite an existing output file.
 
+`loop` also takes `gap=` (seconds of silence after each repeat, with short
+fades so the edges don't click). It can't be combined with `crossfade=`.
+
 From the command line:
 
     ./tracktool.py cut  song.wav --start 0:30 --end 1:15
