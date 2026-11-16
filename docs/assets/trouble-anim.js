@@ -1,8 +1,8 @@
 /*
   Trouble: the animation for the Trouble (Phantechol) recut loop. A white self on the ground looks up at a green self
   that sits on a ledge far above: out of reach, out of its league. In every loop of the song the white self reaches up
-  and jumps, and falls short, twice; a tick on the ruler marks how high its hands got. The third jump meets the green
-  hand: the green self reaches down, and the failed ticks turn green. Then the scene fades and the loop begins again.
+  and jumps, and falls short, twice. The third jump meets the green hand: the green self reaches down, and green rings
+  spread out from the touch. Then the white self comes down, and the loop begins again.
   Black, white and green only.
 
   On a dex page: a <canvas class="loop-anim">, and a <loop-audio> player in the same parent (else the first on the page).
@@ -47,7 +47,6 @@ const lerp2 = (p, q, k) => [lerp(p[0], q[0], k), lerp(p[1], q[1], k)];
 const mod = (a, n) => ((a % n) + n) % n;
 const easeOut = (x) => 1 - (1 - x) * (1 - x) * (1 - x);
 const rgba = (c, a) => 'rgba(' + (c[0] | 0) + ',' + (c[1] | 0) + ',' + (c[2] | 0) + ',' + Math.max(0, Math.min(1, a)).toFixed(3) + ')';
-const mix = (a, b, k) => [lerp(a[0], b[0], k), lerp(a[1], b[1], k), lerp(a[2], b[2], k)];
 const RAD = Math.PI / 180;
 
 // ---------- the loop ----------
@@ -137,7 +136,6 @@ function upAt(Bl) {
   return 0;
 }
 const P_TOUCH = whiteJoints(POSES.touch, JUMP[2], 0).hand;           // where the two hands meet
-const TICK_Y = [whiteJoints(POSES.air, JUMP[0], 0).hand[1], whiteJoints(POSES.air, JUMP[1], 0).hand[1], P_TOUCH[1]];   // how high each jump got
 
 const ctx = cv.getContext('2d', { alpha: false });
 let SC = 1, OX = 0, OY = 0;                            // from the scene to the canvas: place() sets them
@@ -160,12 +158,11 @@ function drawFigure(J, color, alpha) {
 }
 
 // ---------- the story ----------
-// One loop is 32 steps. 0-5: the white self looks up, longing. 6.6-10: it reaches and jumps, and falls short; a tick
-// marks how high it got. 11-14: again, higher, and short again. 14.9-18: it looks down, then up. 20-21.5: the third
-// jump takes off, and the green self reaches down: the hands meet at step 21.5, and every tick turns green.
-// 24-28: the green self lets go and the white self comes down. 29.5-32: the ticks fade, and it is the calm start again.
+// One loop is 32 steps. 0-5: the white self looks up, longing. 6.6-10: it reaches and jumps, and falls short.
+// 11-14: again, higher, and short again. 14.9-18: it looks down, then up. 20-21.5: the third jump takes off, and the
+// green self reaches down: the hands meet at step 21.5, and green rings spread out from the touch.
+// 24-28: the green self lets go and the white self comes down. 28-32: it settles, and it is the calm start again.
 // The green self leans a little more over the ledge as the tries go on. Nothing here follows the beat of the music.
-const TICK_AT = [10, 14, 21.5];                        // the step when each tick appears
 const LEAN_KEYS = [[0, 0.15], [8, 0.2], [12, 0.45], [16, 0.6], [20, 0.95], [28, 0.95], [32, 0.15]];
 const leanAt = (Bl) => {                               // how far the green self leans over the ledge
   for (let i = 1; i < LEAN_KEYS.length; i++) if (Bl <= LEAN_KEYS[i][0]) {
@@ -203,31 +200,6 @@ function drawGlow(S) {                                 // a soft green light beh
   g.addColorStop(0, rgba(GREEN, a)); g.addColorStop(1, rgba(GREEN, 0));
   ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = g; ctx.fillRect(c[0] - r, c[1] - r, 2 * r, 2 * r);
   ctx.globalCompositeOperation = 'source-over';
-}
-
-function drawRuler(S) {                                // the ticks: how high each jump got
-  const x = 716, top = P_TOUCH[1] - 26;
-  ctx.fillStyle = rgba(WHITE, 0.22); ctx.fillRect(x - 1, top, 2, GROUND - top);
-  ctx.fillStyle = rgba(WHITE, 0.4); ctx.fillRect(x - 1, GROUND - 1, 30, 2);
-  for (let i = 0; i < TICK_AT.length; i++) {
-    const a = smooth(TICK_AT[i], TICK_AT[i] + 1, S.Bl) * (1 - smooth(29.5, 31.8, S.Bl));
-    if (a <= 0) continue;
-    const k = smooth(21.6 + 0.45 * i, 22.6 + 0.45 * i, S.Bl);     // white until the hands meet, then green
-    const y = TICK_Y[i], c = mix(WHITE, GREEN, k), len = 30 + 10 * k;
-    ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = rgba(c, 0.18 * a); ctx.fillRect(x - 1, y - 5, len + 2, 10);
-    ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = rgba(c, 0.9 * a); ctx.fillRect(x - 1, y - 1.5, len, 3);
-  }
-}
-
-function drawLink(S) {                                 // a dotted line from the reaching hand to the green hand: the distance
-  const a = S.W.hand, b = S.G.hand, d = Math.hypot(b[0] - a[0], b[1] - a[1]);
-  const al = 0.6 * smooth(60, 140, S.pose.aR[0]) * (1 - S.touch) * smooth(0, 14, d);   // only while the right arm is raised
-  if (al <= 0.01) return;
-  ctx.save();
-  ctx.setLineDash([1, 11]); ctx.lineDashOffset = -S.Bl * 11; ctx.lineCap = 'round';
-  ctx.strokeStyle = rgba(GREEN, al); ctx.lineWidth = 3.4;
-  ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
-  ctx.restore();
 }
 
 function drawDust(S) {                                 // a small puff at the feet when a jump lands short
@@ -275,9 +247,7 @@ function render(t) {
   ctx.setTransform(SC, 0, 0, SC, OX, OY);
   drawGlow(S);
   drawGround();
-  drawRuler(S);
   drawTitle();
-  drawLink(S);
   drawFigure(S.G, GREEN, 1);
   drawFigure(S.W, WHITE, 1);
   drawDust(S);
@@ -300,8 +270,8 @@ function fit() {                                       // as sharp as the screen
   return true;
 }
 
-// The scene is 1920 x 1080, but the screen can have any shape. The middle of the scene (the ruler, the two selves and
-// the ledge: KEY_W wide, KEY_H high) always shows, as big as it can; the rest is black.
+// The scene is 1920 x 1080, but the screen can have any shape. The middle of the scene (the two selves and the
+// ledge: KEY_W wide, KEY_H high) always shows, as big as it can; the rest is black.
 const KEY_W = 760, KEY_H = 882, KEY_Y = 110;           // its middle is the gap between the selves, where the play button shows
 function place() {
   SC = Math.min(W / KEY_W, H_ / KEY_H);
