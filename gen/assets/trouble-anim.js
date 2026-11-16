@@ -202,18 +202,6 @@ function drawGlow(S) {                                 // a soft green light beh
   ctx.globalCompositeOperation = 'source-over';
 }
 
-function drawDust(S) {                                 // a small puff at the feet when a jump lands short
-  for (const land of [10, 14]) {
-    const age = (S.Bl - land) / 1.7;
-    if (age <= 0 || age >= 1) continue;
-    for (let k = 0; k < 8; k++) {
-      const dir = k < 4 ? -1 : 1, j = k % 4, d = (20 + 34 * j) * easeOut(age), lift = (10 + 6 * j) * Math.sin(Math.PI * Math.min(1, age * 1.3));
-      ctx.beginPath(); ctx.arc(CX + dir * d, GROUND - 6 - lift, 2.6 - 0.35 * j, 0, 6.2832);
-      ctx.fillStyle = rgba(WHITE, 0.55 * (1 - age)); ctx.fill();
-    }
-  }
-}
-
 function drawRings(S) {                                // two green rings spread out from the touch
   const s = S.Bl - 21.5;
   for (let k = 0; k < 2; k++) {
@@ -250,7 +238,6 @@ function render(t) {
   drawTitle();
   drawFigure(S.G, GREEN, 1);
   drawFigure(S.W, WHITE, 1);
-  drawDust(S);
   drawRings(S);
 }
 
