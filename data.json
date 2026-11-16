@@ -20,7 +20,7 @@
     {
         "title": "Trouble (Phantechol) Recut Loop",
         "body": [
-            "<span class='loop-stage'><canvas class='loop-anim' width='1920' height='1080' role='img' aria-label='Animation: a white stick figure reaches up for a green stick figure that sits on a ledge far above, jumps, and falls short, try after try, until their hands meet'></canvas><loop-audio src='assets/trouble_loop.loop.mp3' loop-start='0.5' loop-length='12.7'>Trouble</loop-audio></span><script src='assets/trouble-anim.js' defer></script>"
+            "<span class='loop-stage'><canvas class='loop-anim' width='1920' height='1080' role='img' aria-label='Animation: a white stick figure reaches up for a green stick figure that sits on a ledge far above, jumps twice and falls short, and on the third jump their hands meet'></canvas><loop-audio src='assets/trouble_loop.loop.mp3' loop-start='0.5' loop-length='12.7'>Trouble</loop-audio></span><script src='assets/trouble-anim.js' defer></script>"
         ]
     }
 ]
